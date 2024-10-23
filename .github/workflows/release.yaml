@@ -23,7 +23,7 @@ jobs:
     # See here: https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment
     environment:
       name: pypi
-      url: https://pypi.org/p/nodestream-plugin-dotenv/
+      url: https://pypi.org/p/nodestream-plugin-semantic/
     
     steps:
       # Checkout the repository subject to the release.
