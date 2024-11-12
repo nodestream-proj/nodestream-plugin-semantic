@@ -59,7 +59,7 @@ def test_content_make_ingestible():
     assert len(ingest.relationships) == 1
     relationship = ingest.relationships[0]
     assert relationship.relationship.type == "test_relationship"
-    assert relationship.outbound == False
+    assert relationship.outbound is False
     assert relationship.to_node.type == "test_type"
     relationship.to_node.key_values == {"id": parent_content.id}
     relationship.to_node.properties == {"content": parent_content.content}
