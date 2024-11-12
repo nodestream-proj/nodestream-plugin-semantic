@@ -1,10 +1,9 @@
 from abc import ABC, abstractmethod
 
-from nodestream.subclass_registry import SubclassRegistry
 from nodestream.pluggable import Pluggable
+from nodestream.subclass_registry import SubclassRegistry
 
 from .model import Content, Embedding
-
 
 EMBEDDER_SUBCLASS_REGISTRY = SubclassRegistry()
 
