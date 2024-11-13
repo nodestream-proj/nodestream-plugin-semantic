@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Iterable
 
-from nodestream.subclass_registry import SubclassRegistry
 from nodestream.pluggable import Pluggable
+from nodestream.subclass_registry import SubclassRegistry
 
 from .model import Content
 
@@ -25,7 +25,8 @@ class Chunker(ABC, Pluggable):
         return CHUNKER_SUBCLASS_REGISTRY.get(type)(**chunker_kwargs)
 
     @abstractmethod
-    def chunk(self, content: Content) -> Iterable[Content]: ...
+    def chunk(self, content: Content) -> Iterable[Content]:
+        ...
 
 
 class SplitOnDelimiterChunker(Chunker):

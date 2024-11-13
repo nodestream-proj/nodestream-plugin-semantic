@@ -1,24 +1,24 @@
 from glob import glob
 from pathlib import Path
-from typing import Optional, List, Dict
+from typing import Dict, List, Optional
 
 from nodestream.model import DesiredIngestion
 from nodestream.pipeline import Extractor, Transformer
 from nodestream.pipeline.value_providers import (
-    ValueProvider,
     JmespathValueProvider,
     ProviderContext,
+    ValueProvider,
 )
 from nodestream.schema import (
-    ExpandsSchema,
-    SchemaExpansionCoordinator,
-    GraphObjectSchema,
     Cardinality,
+    ExpandsSchema,
+    GraphObjectSchema,
+    SchemaExpansionCoordinator,
 )
 
 from .chunk import Chunker
+from .content_types import PLAIN_TEXT_ALIAS, ContentType
 from .embed import Embedder
-from .content_types import ContentType, PLAIN_TEXT_ALIAS
 from .model import Content
 
 DEFAULT_ID = JmespathValueProvider.from_string_expression("id")

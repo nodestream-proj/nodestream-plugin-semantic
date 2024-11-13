@@ -1,9 +1,8 @@
-from dataclasses import dataclass
 import hashlib
-from typing import List, Optional, Iterable
+from dataclasses import dataclass
+from typing import Iterable, List, Optional
 
-from nodestream.model import DesiredIngestion, Node
-
+from nodestream.model import DesiredIngestion, Node, Relationship
 
 Embedding = List[float | int]
 CONTENT_NODE_TYPE_ID_PROPERTY = "id"
@@ -66,8 +65,9 @@ class Content:
 
         if self.parent:
             self.parent.apply_to_node(node_type, related := Node())
+            relationship = Relationship(type=relationship_type)
             ingest.add_relationship(
-                related_node=related, type=relationship_type, outbound=False
+                related_node=related, relationship=relationship, outbound=False
             )
 
         return ingest

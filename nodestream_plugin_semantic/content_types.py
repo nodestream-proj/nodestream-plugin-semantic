@@ -1,9 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import Iterable
 from pathlib import Path
+from typing import Iterable
 
 from nodestream.subclass_registry import SubclassRegistry
-
 
 CONTENT_TYPE_SUBCLASS_REGISTRY = SubclassRegistry()
 PLAIN_TEXT_ALIAS = "plain_text"
