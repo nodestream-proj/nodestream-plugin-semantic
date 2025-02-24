@@ -23,7 +23,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.10"
-nodestream = "^0.13.0"
+nodestream = "0.14.0"
 semchunk = "^2.2.0"
 
 [tool.poetry.group.dev.dependencies]
