@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nodestream-plugin-semantic"
-version = "0.13.0"
+version = "0.14.0"
 description = "A plugin for embedding semantic data into a nodestream project"
 authors = ["Zach Probst <Zach_Probst@intuit.com>"]
 packages = [{include = "nodestream_plugin_semantic"}]
@@ -23,7 +23,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.10"
-nodestream = "^0.13.0"
+nodestream = "^0.14.0"
 semchunk = "^2.2.0"
 
 [tool.poetry.group.dev.dependencies]
