@@ -1,8 +1,10 @@
 import hashlib
 from dataclasses import dataclass
-from typing import Iterable, List, Optional
-
+from typing import Iterable, List, Optional, Any
+from .argument_resolvers.field_declaration import FieldDeclaration
 from nodestream.model import DesiredIngestion, Node, Relationship
+import json
+
 
 Embedding = List[float | int]
 CONTENT_NODE_TYPE_ID_PROPERTY = "id"
@@ -71,3 +73,50 @@ class Content:
             )
 
         return ingest
+
+
+class DeclarativeJsonSchema:
+    @classmethod
+    def from_file_data(
+        cls, declaration: dict[str, FieldDeclaration | dict[str, Any] | list[Any]]
+    ):
+        schema = {}
+        for key, value in declaration.items():
+            if isinstance(value, dict):
+                schema[key] = cls.from_file_data(value)
+            elif isinstance(value, list):
+                schema[key] = [cls.from_file_data(item) for item in value]
+            elif isinstance(value, FieldDeclaration):
+                schema[key] = str(value)
+        return DeclarativeJsonSchema(schema)
+
+    def __init__(self, schema: dict):
+        self.schema = schema
+
+    @staticmethod
+    def recursive_search(expected_schema: Any, data: Any) -> bool:
+        if isinstance(expected_schema, FieldDeclaration):
+            return expected_schema.validate(data)
+        elif isinstance(expected_schema, list):
+            for item in expected_schema:
+                if not DeclarativeJsonSchema.recursive_search(item, data):
+                    return False
+        elif isinstance(expected_schema, dict):
+            for key, value in expected_schema.items():
+                if key not in data:
+                    return False
+                if not DeclarativeJsonSchema.recursive_search(value, data[key]):
+                    return False
+        return True
+
+    def validate(self, data: dict) -> bool:
+        for key, value in data.items():
+            if key not in self.schema:
+                return False
+            if not DeclarativeJsonSchema.recursive_search(self.schema[key], value):
+                return False
+        return True
+
+    @property
+    def prompt_representation(self) -> str:
+        return json.dumps(self.schema, indent=4, default=lambda o: o.__dict__)

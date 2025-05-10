@@ -1,6 +1,6 @@
 from glob import glob
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from nodestream.model import DesiredIngestion
 from nodestream.pipeline import Extractor, Transformer
@@ -20,6 +20,13 @@ from .chunk import Chunker
 from .content_types import PLAIN_TEXT_ALIAS, ContentType
 from .embed import Embedder
 from .model import Content
+
+from .model import DeclarativeJsonSchema
+from .inference import InferenceRequestor
+from logging import getLogger
+from math import ceil
+import re
+
 
 DEFAULT_ID = JmespathValueProvider.from_string_expression("id")
 DEFAULT_CONTENT = JmespathValueProvider.from_string_expression("content")
@@ -173,3 +180,89 @@ class ContentInterpreter(Transformer, ExpandsSchema):
             Cardinality.MANY,
             Cardinality.SINGLE,
         )
+
+
+CHARS_PER_TOKEN = 2
+DEFAULT_PROMPT_LOCATION = "nodestream_plugin_semantic/prompts/text2json.txt"
+PROMPT_FILE_ERROR = (
+    "The prompt must contain formatting fields for the {text} and the {schema}."
+)
+
+
+class TextToJson(Transformer):
+    _required_parameters = set(["schema", "text"])
+
+    def __init__(
+        self,
+        schema: dict,
+        inference_requestor_kwargs: dict,
+        discard_invalid: bool = False,
+        prompt_location: str = DEFAULT_PROMPT_LOCATION,
+    ):
+        self.schema = DeclarativeJsonSchema.from_file_data(schema)
+        self.inference_requestor = InferenceRequestor.from_file_data(
+            **inference_requestor_kwargs
+        )
+        self.discard_invalid = discard_invalid
+        self.prompt = self.read_prompt_from_file(prompt_location)
+        self.logger = getLogger(name=self.__class__.__name__)
+
+    def read_prompt_from_file(self, path: str) -> str:
+        with open(path, "r") as prompt_file:
+            prompt_string = prompt_file.read()
+            variables = re.findall(r"{(\w+)}", prompt_string)
+            if not set(variables) == self._required_parameters:
+                raise ValueError(PROMPT_FILE_ERROR)
+            return prompt_file
+
+    async def transform_record(self, data: dict) -> Any:
+        text = data.pop("content")
+        additional_args = data
+
+        """
+            Handle the chunking and partitioning of the text/text stream to fit the 
+            context window. Make an assumption that the length of text*2 will be under 
+            the maximum token limit of the model. TODO find ways to officially 
+            determine token length.
+        """
+        string_size = len(text)
+        chunk_size = self.inference_requestor.context_window * CHARS_PER_TOKEN
+        chunk_count = int(ceil(string_size / (chunk_size)))
+        for index in range(chunk_count):
+            begin = index * chunk_size
+            end = min(string_size, (index + 1) * chunk_size)
+            substring = text[begin:end]
+
+            # Create the prompt using the schema and the truncated text.
+            # Handle entity resolution orchestration here.
+            prompt = self.prompt.format(
+                schema=self.schema.prompt_representation, text=substring
+            )
+
+            # Execute the prompt using the inference requestor.
+            result: list[dict] | dict = await self.inference_requestor.execute_prompt(
+                prompt
+            )
+
+            # Parse the response and yield the records.
+            # The response should be a JSON object.
+            if isinstance(result, list):
+                for piece in result:
+                    if self.schema.validate(piece):
+                        piece.update(additional_args)
+                        yield piece
+                    elif not self.discard_invalid:
+                        self.logger.info(f"Invalid item passed: {piece}.")
+                        piece.update(additional_args)
+                        yield piece
+
+            elif isinstance(result, dict):
+                if self.schema.validate(result):
+                    result.update(additional_args)
+                    yield result
+                elif not self.discard_invalid:
+                    self.logger.info(f"Invalid item passed: {result}.")
+                    result.update(additional_args)
+                    yield result
+            else:
+                raise ValueError(f"Invalid result format: {result}.")
