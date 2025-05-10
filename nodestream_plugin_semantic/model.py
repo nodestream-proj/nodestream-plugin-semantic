@@ -1,6 +1,6 @@
 import hashlib
 from dataclasses import dataclass
-from typing import Iterable, List, Optional, Any, Type
+from typing import Iterable, List, Optional, Any
 from .argument_resolvers.field_declaration import FieldDeclaration
 from nodestream.model import DesiredIngestion, Node, Relationship
 import json
@@ -77,7 +77,9 @@ class Content:
 
 class DeclarativeJsonSchema:
     @classmethod
-    def from_file_data(cls, declaration: dict[str, FieldDeclaration | dict[str, Any] | list[Any]]):
+    def from_file_data(
+        cls, declaration: dict[str, FieldDeclaration | dict[str, Any] | list[Any]]
+    ):
         schema = {}
         for key, value in declaration.items():
             if isinstance(value, dict):

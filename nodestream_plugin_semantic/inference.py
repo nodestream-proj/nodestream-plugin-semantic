@@ -17,17 +17,16 @@ class InferenceRequestor(ABC, Pluggable):
         cls.import_all()  # Import all inferencers to register them.
         return INFERENCE_SUBCLASS_REGISTRY.get(type)(**inference_kwargs)
 
-
     @abstractproperty
     def context_window(self) -> int:
         """
-            The context window of the model.
+        The context window of the model.
         """
         ...
 
     @abstractmethod
     async def execute_prompt(self, prompt: str) -> str:
         """
-            Executes the given prompt and returns the response from an arbitrary model.
+        Executes the given prompt and returns the response from an arbitrary model.
         """
         ...
