@@ -26,9 +26,6 @@ python = "^3.10"
 nodestream = "^0.15.0"
 semchunk = "^2.2.0"
 
-[tool.poetry.plugins."nodestream.plugins"]
-"argument_resolvers" = "nodestream_plugin_semantic.argument_resolvers"
-
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.2.0"
 pytest-mock = "^3.11.1"
