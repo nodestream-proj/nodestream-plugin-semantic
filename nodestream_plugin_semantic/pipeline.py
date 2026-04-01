@@ -180,74 +180,101 @@ class ContentInterpreter(Transformer, ExpandsSchema):
             Cardinality.SINGLE,
         )
 
-BASE_PROMPT = """
-You are a JSON schema generator. 
-You will be given a JSON object and you will generate a JSON schema for it. 
-The JSON schema should be in the format of a JSON object. 
-This object will end with text representing the description of the object, along with the datatype we want the result to be contained as. 
-The examples I want you to use s reference are within the EXAMPLES section. 
-The schema that I want you to format the JSON as will be located within the SCHEMA field. 
-The text I want you to parse and attempt to retrieve the relevant information from is within the TEXT field.
-DO NOT PROVIDE ANYTHING OTHER THAN THE RESULTING JSON.
-IF YOU DO NOT UNDERSTAND THE TEXT OR CANNOT FIND THE RELEVANT INFORMATION FILL THE JSON WITH NULLS.
-INCLUDE ALL FIELDS IN THE JSON AS PROVIDED IN THE SCHEMA. 
-EXAMPLES ARE PROVIDED TO HELP YOU UNDERSTAND THE SCHEMA AND THE TEXT.
-EXAMPLES IN THE SCHEMA ARE PROVIDED TO HELP UNDERSTAND THE FORMATTING OF THE OBJECT BEING REQUESTED.
-PROVIDE THE ENTIRE JSON. MAKE SURE THAT IT IS VALID JSON.
-DO NOT INCLUDE ANY ```json ``` OR ANY OTHER MARKUP AROUND THE JSON. ONLY USE VALID JSON.
-
----EXAMPLES----
-Input:
-    ---EXAMPLE SCHEMA---
-    {{
-        "subject_name": "type=string; description=Name of the subject extracted from the text document.; examples=[Amy, Isabella, Bob]; required=True;",
-        "subject_age": "type=integer; description=Age of the subject extracted from the text document.; examples=[10, 12, 14, 25]; required=False;"
-        "friends": [
-            {{
-                "name": "type=string; description=Name of any other subject extracted from the text document.; examples=[Amy, Isabella, Bob]; required=True;",
-                "age": "type=integer; description=Age of any other subject extracted from the text document.; examples=[10, 12, 14, 25]; required=False;"
-                "activity": "type=string; description=Activity parties were participating in.; examples=[running, dancing, playing, fishing]; required=False;"
-            }}
-        ]
-    }}
-    ---EXAMPLE END SCHEMA---
-    ---EXAMPLE TEXT---
-    John lived in a farm in Wyoming when he was 30 years old. He had two friends, Jane and Jim, who were 25 and 28 years old respectively.
-    They used to go fishing together every weekend. John loved fishing and he was very good at it. He had a big boat and a lot of fishing gear.
-    ---EXAMPLE END TEXT---
-Output: 
-{{
-    "subject_name": "John",
-    "subject_age": 30,
-    "friends": [
-        {{
-            "name": "Jane",
-            "age": 25
-            "activity": "fishing"
-        }},
-        {{
-            "name": "Jim",
-            "age": 28
-            "activity": "fishing"
-        }}
-    ]
-}}
----END EXAMPLES----
----SCHEMA---
-{schema}
----END SCHEMA---
-
----TEXT---
-{text}
----END TEXT---
-"""
+BASE_PROMPT = (
+    "You are a JSON schema generator.\n"
+    "You will be given a JSON object and you will generate a JSON schema for it.\n"
+    "The JSON schema should be in the format of a JSON object.\n"
+    "This object will end with text representing the description of the object, "
+    "along with the datatype we want the result to be contained as.\n"
+    "The examples I want you to use as reference are within the EXAMPLES section.\n"
+    "The schema that I want you to format the JSON as will be located within the "
+    "SCHEMA field.\n"
+    "The text I want you to parse and attempt to retrieve the relevant information "
+    "from is within the TEXT field.\n"
+    "DO NOT PROVIDE ANYTHING OTHER THAN THE RESULTING JSON.\n"
+    "IF YOU DO NOT UNDERSTAND THE TEXT OR CANNOT FIND THE RELEVANT INFORMATION, "
+    "FILL THE JSON WITH NULLS.\n"
+    "INCLUDE ALL FIELDS IN THE JSON AS PROVIDED IN THE SCHEMA.\n"
+    "EXAMPLES ARE PROVIDED TO HELP YOU UNDERSTAND THE SCHEMA AND THE TEXT.\n"
+    "EXAMPLES IN THE SCHEMA ARE PROVIDED TO HELP UNDERSTAND THE FORMATTING OF THE "
+    "OBJECT BEING REQUESTED.\n"
+    "PROVIDE THE ENTIRE JSON. MAKE SURE THAT IT IS VALID JSON.\n"
+    "DO NOT INCLUDE ANY ```json ``` OR ANY OTHER MARKUP AROUND THE JSON. "
+    "ONLY USE VALID JSON.\n"
+    "\n"
+    "---EXAMPLES----\n"
+    "Input:\n"
+    "    ---EXAMPLE SCHEMA---\n"
+    "    {\n"
+    '        "subject_name": '
+    '"type=string; description=Name of the subject extracted from the text '
+    'document.; examples=[Amy, Isabella, Bob]; required=True;",\n'
+    '        "subject_age": '
+    '"type=integer; description=Age of the subject extracted from the text '
+    'document.; examples=[10, 12, 14, 25]; required=False;"\n'
+    '        "friends": [\n'
+    "            {\n"
+    '                "name": '
+    '"type=string; description=Name of any other subject extracted from the text '
+    'document.; examples=[Amy, Isabella, Bob]; required=True;",\n'
+    '                "age": '
+    '"type=integer; description=Age of any other subject extracted from the text '
+    'document.; examples=[10, 12, 14, 25]; required=False;",\n'
+    '                "activity": '
+    '"type=string; description=Activity parties were participating in.; '
+    'examples=[running, dancing, playing, fishing]; required=False;"\n'
+    "            }\n"
+    "        ]\n"
+    "    }\n"
+    "    ---EXAMPLE END SCHEMA---\n"
+    "    ---EXAMPLE TEXT---\n"
+    "    John lived in a farm in Wyoming when he was 30 years old.\n"
+    "    He had two friends, Jane and Jim, who were 25 and 28 years old "
+    "respectively.\n"
+    "    They used to go fishing together every weekend.\n"
+    "    John loved fishing and he was very good at it.\n"
+    "    He had a big boat and a lot of fishing gear.\n"
+    "    ---EXAMPLE END TEXT---\n"
+    "Output: \n"
+    "{\n"
+    '    "subject_name": "John",\n'
+    '    "subject_age": 30,\n'
+    '    "friends": [\n'
+    "        {\n"
+    '            "name": "Jane",\n'
+    '            "age": 25,\n'
+    '            "activity": "fishing"\n'
+    "        },\n"
+    "        {\n"
+    '            "name": "Jim",\n'
+    '            "age": 28,\n'
+    '            "activity": "fishing"\n'
+    "        }\n"
+    "    ]\n"
+    "}\n"
+    "---END EXAMPLES----\n"
+    "---SCHEMA---\n"
+    "{schema}\n"
+    "---END SCHEMA---\n"
+    "\n"
+    "---TEXT---\n"
+    "{text}\n"
+    "---END TEXT---\n"
+)
 
 CHARS_PER_TOKEN = 2 
 
 class TextToJson(Transformer):
-    def __init__(self, schema: dict, inference_requestor_kwargs: dict, discard_invalid: bool = False):
+    def __init__(
+        self,
+        schema: dict,
+        inference_requestor_kwargs: dict,
+        discard_invalid: bool = False,
+    ):
         self.schema = DeclarativeJsonSchema.from_file_data(schema)
-        self.inference_requestor = InferenceRequestor.from_file_data(**inference_requestor_kwargs)
+        self.inference_requestor = InferenceRequestor.from_file_data(
+            **inference_requestor_kwargs
+        )
         self.discard_invalid = discard_invalid
         self.logger = getLogger(name=self.__class__.__name__)
 
@@ -255,21 +282,29 @@ class TextToJson(Transformer):
         text = data.pop("content")
         additional_args = data
 
-        # Handle the chunking and partitioning of the text/text stream to fit the context window. 
-        # Make an assumption that the length of text*2 will be under the maximum token limit of the model. TODO find ways to officially determine token length.
+        # Handle the chunking and partitioning of the text/text stream to fit the
+        # context window. Make an assumption that the length of text*2 will be under
+        # the maximum token limit of the model.
+        # TODO: find ways to officially determine token length.
         string_size = len(text)
-        chunk_size = (self.inference_requestor.context_window * CHARS_PER_TOKEN)
-        chunk_count = int(ceil(string_size / (chunk_size)))
+        chunk_size = self.inference_requestor.context_window * CHARS_PER_TOKEN
+        chunk_count = int(ceil(string_size / chunk_size))
         for index in range(chunk_count):
-            begin = index*chunk_size
-            end = min(string_size, (index+1)*chunk_size)
+            begin = index * chunk_size
+            end = min(string_size, (index + 1) * chunk_size)
             substring = text[begin:end]
 
-            # Create the prompt using the schema and the truncated text. Handle entity resolution orchestration here.
-            prompt = BASE_PROMPT.format(schema=self.schema.prompt_representation, text=substring)
+            # Create the prompt using the schema and the truncated text.
+            # Handle entity resolution orchestration here.
+            prompt = BASE_PROMPT.format(
+                schema=self.schema.prompt_representation,
+                text=substring,
+            )
             
             # Execute the prompt using the inference requestor.
-            result: list[dict] | dict = await self.inference_requestor.execute_prompt(prompt)
+            result: list[dict] | dict = await self.inference_requestor.execute_prompt(
+                prompt
+            )
 
             # Parse the response and yield the records.
             # The response should be a JSON object.
